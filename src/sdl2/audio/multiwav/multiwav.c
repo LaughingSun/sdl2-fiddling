@@ -93,7 +93,7 @@ static int print_spec (SDL_AudioSpec *spec, char *label) {
   len += printf("    silence:      %10d Audio buffer silence value (calculated)\n", spec->silence);
   len += printf("    samples:      %10d Audio buffer size in samples\n", spec->samples);
   len += printf("    size:         %10d Audio buffer size in bytes\n", spec->size);
-  len += printf("    callback:     %10p Function to call when the audio device needs more data\n", spec->callback);
+  len += printf("    callback:     %10p Request data callback\n", spec->callback);
 //  len += printf("    userdata:     %10p A pointer that is passed to callback (otherwise ignored by SDL)\n", spec->userdata);
   len += print_userdata((struct AudioSpecUserdata_t *)spec->userdata, "  ");
   return len;
