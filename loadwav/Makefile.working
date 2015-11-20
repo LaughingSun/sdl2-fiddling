@@ -1,0 +1,16 @@
+
+SRCS    = $(wildcard *.c)
+
+.PHONY: all
+
+all: $(patsubst %.c,%,$(SRCS))
+	@echo found rules for: $^
+
+%: %.c
+	gcc -I/usr/local/include/SDL2 -L/usr/local/lib $< -Wl,-rpath,/usr/local/lib -lSDL2 -lm -o $@
+	@echo built: $@
+
+clean: $(patsubst %.c,%,$(SRCS))
+	rm $(patsubst %.c,%,$(SRCS))
+	@echo cleaned: $^
+
