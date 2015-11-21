@@ -1,0 +1,21 @@
+
+#ifndef _SURFACE_LOADER_H_
+#define _SURFACE_LOADER_H_
+
+#include <cstdlib>
+#include <climits>
+#include <string>
+#include <unordered_map>
+#include <SDL2/SDL.h>
+
+class SurfaceLoader {
+
+  SurfaceLoader ( char *basepath );
+  ~SurfaceLoader () {
+  
+  SDL_Surface* get ( char *path );
+  SDL_Surface* load ( char *path );
+  SDL_Surface* drop ( char *path );
+}
+
+#endif

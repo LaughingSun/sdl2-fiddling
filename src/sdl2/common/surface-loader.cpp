@@ -1,0 +1,146 @@
+
+#include <cstdlib>
+#include <climits>
+#include <string>
+#include <unordered_map>
+#include <SDL2/SDL.h>
+
+/* TODOS:
+    1) make path windows compatible
+    2) create and implement private common finder method for public methods
+*/
+
+class SurfaceLoader {
+
+  private:
+
+    const size_t _BlockSize = 0x100;
+        
+    static std::unordered_map<std::string,SDL_Surface*> _Cache;
+    
+    char *_realpath = NULL;
+    char *_basepath = NULL;
+    char *_tmppath = NULL;
+    size_t _basepath_length = 0;
+    size_t _tmppath_length = 0;
+    
+    // common cache lookup / insert function
+    std::unordered_map<std::string,SDL_Surface*>::const_iterator
+        _get ( const char *path ) {
+        
+      std::unordered_map<std::string,SDL_Surface*>::const_iterator got;
+      size_t len;
+      
+      if ( _basepath && path[0] != '/' ) { // not compatible with windows (TODO: make it compatible)
+        if ( _tmppath[_tmppath_length] != '\0' ) {
+          printf( "thread collision method SurfaceLoader::laodSurface" );
+          return _Cache.end();
+        }
+        
+        if ( len + 1 > _tmppath_length ) {
+          _tmppath = (char *)realloc(_tmppath, _tmppath_length = len + _BlockSize - len % _BlockSize);
+          if ( ! _tmppath ) {
+            printf( "out-of-memory method SurfaceLoader::laodSurface" );
+            return _Cache.end();
+          }
+          strcpy( _tmppath, _basepath );
+        }
+        
+        realpath( _tmppath, _realpath );
+      } else {
+        realpath( path, _realpath );
+      }
+      
+      got = _Cache.find( _realpath );
+      
+      // terminate the basepath buffer so we know it is available and remove
+      // the previous relative path
+      if ( _tmppath ) _tmppath[_basepath_length] = 0;
+      
+      return got;
+    }
+    
+  public:
+    
+    // construct
+    SurfaceLoader ( const char *basepath ) {
+      size_t len = strlen(basepath);
+      
+      _realpath = (char *)malloc(PATH_MAX);
+      
+      if ( basepath ) {
+        _basepath = (char *)malloc(_basepath_length = len + 1);
+        _tmppath = (char *)malloc(_tmppath_length = len + _BlockSize - len % _BlockSize);
+        strcpy( _basepath, basepath );
+        strcpy( _tmppath, basepath );
+      }
+    }
+    
+    // destruct
+    ~SurfaceLoader () {
+      std::unordered_map<std::string,SDL_Surface*>::const_iterator item;
+      SDL_Surface* result = NULL;
+      
+      for ( item = _Cache.begin(); item != _Cache.end(); ++item ) {
+        drop( item->first.c_str() );
+      }
+      
+      free( _realpath );
+      if ( _basepath ) free( _basepath );
+      if ( _tmppath ) free( _tmppath );
+      
+    }
+    
+    // get
+    SDL_Surface* get ( const char *path ) {
+        
+      std::unordered_map<std::string,SDL_Surface*>::const_iterator got;
+      SDL_Surface* result = NULL;
+      
+      if ( (got = _get( path )) != _Cache.end() ) {
+        // found it and we are oone
+        result = got->second;
+      }
+      
+      return result;
+    }
+    
+    // load
+    SDL_Surface* load ( const char *path ) {
+    
+      std::unordered_map<std::string,SDL_Surface*>::const_iterator got;
+      SDL_Surface* result = NULL;
+      
+      if ( (got = _get( path )) != _Cache.end() ) {
+        // found it and we are oone
+        result = got->second;
+      } else if ( result = SDL_LoadBMP( _realpath ) ) {
+        // put in the cache
+        _Cache.insert( { _realpath, result } );
+      } else {
+        result = NULL;
+	      printf( "Unable to load image %s! SDL Error: %s\n", _realpath, SDL_GetError() );
+	      
+      }
+      
+	    return result;
+    }
+    
+    // remove
+    SDL_Surface* drop ( const char *path ) {
+    
+      std::unordered_map<std::string,SDL_Surface*>::const_iterator got;
+      SDL_Surface* result = NULL;
+      
+      if ( (got = _get( path )) != _Cache.end() ) {
+        // found it, now say good bye to it
+        result = got->second;
+        _Cache.erase( got );
+      }
+      
+	    return result;
+    }
+    
+};
+
+
