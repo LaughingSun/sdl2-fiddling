@@ -9,4 +9,4 @@ requirements:
 + SDL2 library
 + GL library
 + gcc or other similar compiler
-
++ patiently reading through https://www.libsdl.org/
